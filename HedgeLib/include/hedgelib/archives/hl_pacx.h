@@ -14,6 +14,7 @@ constexpr bina::ver ver_201 = bina::ver('2', '0', '1');
 constexpr bina::ver ver_301 = bina::ver('3', '0', '1');
 constexpr bina::ver ver_402 = bina::ver('4', '0', '2');
 constexpr bina::ver ver_403 = bina::ver('4', '0', '3');
+constexpr bina::ver ver_405 = bina::ver('4', '0', '5');
 
 constexpr const nchar* const ext = HL_NTEXT(".pac");
 HL_API extern const char* const data_types[];
@@ -1536,7 +1537,7 @@ struct header
 
     HL_API static void start_write(u32 uid, bool hasParents,
         compress_type compressType, bina::endian_flag endianFlag,
-        stream& stream);
+        stream& stream, bina::ver version = ver_403);
 
     HL_API static void finish_write(std::size_t headerPos,
         std::size_t rootPos, u32 rootUncompressedSize,
@@ -1621,6 +1622,78 @@ inline void save(archive_entry_list& arc, u32 maxChunkSize,
         noCompress);
 }
 } // v03
+
+namespace v05
+{
+using header = v03::header;
+
+inline void fix(void* pac)
+{
+    header* headerPtr = static_cast<header*>(pac);
+    headerPtr->fix();
+}
+
+inline blob decompress_root(const void* pac)
+{
+    const header* headerPtr = static_cast<const header*>(pac);
+    return headerPtr->decompress_root();
+}
+
+inline void read(void* pac, archive_entry_list* hlArc,
+    std::vector<blob>* pacs = nullptr, bool readSplits = true,
+    std::vector<std::string>* parentPaths = nullptr)
+{
+    v03::read(pac, hlArc, pacs, readSplits, parentPaths);
+}
+
+HL_API void write(const archive_entry_list& arc,
+    const std::vector<std::string>* parentPaths,
+    const nchar* pacName, u32 maxChunkSize,
+    compress_type compressType, bina::endian_flag endianFlag,
+    const std::size_t extCount, const supported_ext* exts,
+    stream& stream, u32 splitLimit = default_split_limit,
+    u32 dataAlignment = default_alignment, bool noCompress = false);
+
+HL_API void save(const archive_entry_list& arc,
+    const std::vector<std::string>* parentPaths,
+    u32 maxChunkSize, compress_type compressType,
+    bina::endian_flag endianFlag, const std::size_t extCount, 
+    const supported_ext* exts, const nchar* filePath,
+    u32 splitLimit = default_split_limit,
+    u32 dataAlignment = default_alignment,
+    bool noCompress = false);
+
+inline void save(const archive_entry_list& arc,
+    const std::vector<std::string>* parentPaths,
+    u32 maxChunkSize, compress_type compressType,
+    bina::endian_flag endianFlag, const std::size_t extCount,
+    const supported_ext* exts, const nstring& filePath,
+    u32 splitLimit = default_split_limit,
+    u32 dataAlignment = default_alignment,
+    bool noCompress = false)
+{
+    save(arc, parentPaths, maxChunkSize, compressType,
+        endianFlag, extCount, exts, filePath.c_str(),
+        splitLimit, dataAlignment, noCompress);
+}
+
+HL_API void save(archive_entry_list& arc, u32 maxChunkSize,
+    compress_type compressType, bina::endian_flag endianFlag,
+    const std::size_t extCount, const supported_ext* exts,
+    const nchar* filePath, u32 splitLimit = default_split_limit,
+    u32 dataAlignment = default_alignment, bool noCompress = false);
+
+inline void save(archive_entry_list& arc, u32 maxChunkSize,
+    compress_type compressType, bina::endian_flag endianFlag,
+    const std::size_t extCount, const supported_ext* exts,
+    const nstring& filePath, u32 splitLimit = default_split_limit,
+    u32 dataAlignment = default_alignment, bool noCompress = false)
+{
+    save(arc, maxChunkSize, compressType, endianFlag,
+        extCount, exts, filePath.c_str(), splitLimit, dataAlignment,
+        noCompress);
+}
+} // v05
 
 using header = v03::header;
 

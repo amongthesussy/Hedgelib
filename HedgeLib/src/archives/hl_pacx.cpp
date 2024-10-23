@@ -2262,7 +2262,7 @@ void header::start_write(bina::ver version,
     // Generate PACxV3 header.
     header pacxHeader =
     {
-        sig,                                // signature
+        (version.rev < '5') ? sig : 0,      // signature
         version,                            // version
         static_cast<u8>(endianFlag),        // endianFlag
         uid,                                // uid
@@ -3149,8 +3149,11 @@ struct in_dep_metadata_list : public std::vector<in_dep_metadata>
         // Fill-in string offsets in dependency entries.
         for (const auto& dep : *this)
         {
-            // Add name to string table.
-            strTable.emplace_back(dep.name, curOffPos);
+            if (!dep.name.empty())
+            {
+                // Add name to string table.
+                strTable.emplace_back(dep.name, curOffPos);
+            }
 
             // Increase current offset position to account for dependency entry.
             curOffPos += sizeof(dep_info);
@@ -4016,8 +4019,11 @@ struct in_dep_metadata_list : public std::vector<in_dep_metadata>
         for (const auto& dep : *this)
         {
             // Add name to string table.
-            strTable.emplace_back(dep.name, curOffPos +
-                offsetof(lz4_dep_info, name));
+            if (!dep.name.empty())
+            {
+                strTable.emplace_back(dep.name, curOffPos +
+                    offsetof(lz4_dep_info, name));
+            }
 
             // Fix chunks offset.
             stream.fix_off64(0, curOffPos +
@@ -4082,7 +4088,10 @@ struct in_dep_metadata_list : public std::vector<in_dep_metadata>
             stream.write_obj(depInfo);
 
             // Add name to string table.
-            strTable.emplace_back(dep.name, curOffPos);
+            if (!dep.name.empty())
+            {
+                strTable.emplace_back(dep.name, curOffPos);
+            }
 
             // Increase current offset position to account for dependency entry.
             curOffPos += sizeof(deflate_dep_info);
@@ -4248,7 +4257,7 @@ static void in_generate_splits(const nchar* pacName,
     for (unsigned short splitIndex = 0; splitIndex < splitCount; ++splitIndex)
     {
         // Generate dependency metadata.
-        deps.emplace_back(splitName);
+        deps.emplace_back((version.rev >= '5') ? std::string() : splitName);
 
         // Generate dependency pac data.
         in_generate_split_data(version, splitIndex, uid,
@@ -4794,13 +4803,13 @@ static u16 in_get_flags(bool hasParents, compress_type compressType)
 
 void header::start_write(u32 uid, bool hasParents,
     compress_type compressType, bina::endian_flag endianFlag,
-    stream& stream)
+    stream& stream, bina::ver version)
 {
     // Generate PACx header.
     header pacxHeader =
     {
         sig,                                        // signature
-        ver_403,                                    // version
+        version,                                    // version
         static_cast<u8>(endianFlag),                // endianFlag
         uid,                                        // uid
         0U,                                         // fileSize
@@ -4945,7 +4954,7 @@ archive_entry generate_dependencies_file(
         depsFile.size(), depsFile.data());
 }
 
-void write(const archive_entry_list& arc,
+void in_write(hl::bina::ver version, const archive_entry_list& arc,
     const std::vector<std::string>* parentPaths,
     const nchar* pacName, u32 maxChunkSize,
     compress_type compressType, bina::endian_flag endianFlag,
@@ -4986,7 +4995,7 @@ void write(const archive_entry_list& arc,
 
     if (splitCount)
     {
-        in_generate_splits(pacName, ver_402, uid,
+        in_generate_splits(pacName, (version.rev >= '5') ? version : ver_402, uid,
             splitCount, typeMetadata, splitLimit,
             dataAlignment, maxChunkSize, compressType,
             false, endianFlag, ((noCompress) ?
@@ -5008,7 +5017,7 @@ void write(const archive_entry_list& arc,
     // Start writing header.
     const std::size_t headerPos = stream.tell();
     header::start_write(uid, parentPaths != nullptr,
-        compressType, endianFlag, stream);
+        compressType, endianFlag, stream, version);
 
     // Write metadata if necessary.
     str_table strTable;
@@ -5124,6 +5133,19 @@ void write(const archive_entry_list& arc,
         endianFlag, stream);
 }
 
+void write(const archive_entry_list& arc,
+    const std::vector<std::string>* parentPaths,
+    const nchar* pacName, u32 maxChunkSize,
+    compress_type compressType, bina::endian_flag endianFlag,
+    const std::size_t extCount, const supported_ext* exts,
+    stream& stream, u32 splitLimit, u32 dataAlignment,
+    bool noCompress)
+{
+    in_write(ver_403, arc, parentPaths, pacName, maxChunkSize,
+        compressType, endianFlag, extCount, exts,
+        stream, splitLimit, dataAlignment, noCompress);
+}
+
 void save(const archive_entry_list& arc,
     const std::vector<std::string>* parentPaths,
     u32 maxChunkSize, compress_type compressType,
@@ -5200,6 +5222,81 @@ void save(archive_entry_list& arc, u32 maxChunkSize,
 }
 } // v03
 
+namespace v05
+{
+void write(const archive_entry_list& arc,
+    const std::vector<std::string>* parentPaths,
+    const nchar* pacName, u32 maxChunkSize,
+    compress_type compressType, bina::endian_flag endianFlag,
+    const std::size_t extCount, const supported_ext* exts,
+    stream& stream, u32 splitLimit, u32 dataAlignment,
+    bool noCompress)
+{
+    v03::in_write(ver_405, arc, parentPaths, pacName, maxChunkSize,
+        compressType, endianFlag, extCount, exts,
+        stream, splitLimit, dataAlignment, noCompress);
+}
+
+void save(const archive_entry_list& arc,
+    const std::vector<std::string>* parentPaths,
+    u32 maxChunkSize, compress_type compressType,
+    bina::endian_flag endianFlag, const std::size_t extCount,
+    const supported_ext* exts, const nchar* filePath,
+    u32 splitLimit, u32 dataAlignment, bool noCompress)
+{
+    // Open file for writing.
+    file_stream file(filePath, file::mode::write);
+
+    // Write PACxV405 data to file.
+    write(arc, parentPaths, path::get_name(filePath), maxChunkSize,
+        compressType, endianFlag, extCount, exts, file,
+        splitLimit, dataAlignment, noCompress);
+}
+
+void save(archive_entry_list& arc, u32 maxChunkSize,
+    compress_type compressType, bina::endian_flag endianFlag,
+    const std::size_t extCount, const supported_ext* exts,
+    const nchar* filePath, u32 splitLimit, u32 dataAlignment,
+    bool noCompress)
+{
+    // Find parent path list file, if any.
+    archive_entry* parentsFile = nullptr;
+    for (auto& entry : arc)
+    {
+        if (text::iequal(entry.name(), v03::dependencies_file_name))
+        {
+            parentsFile = &entry;
+            break;
+        }
+    }
+
+    // If a parent path list file was found...
+    if (parentsFile)
+    {
+        archive_entry tmp(std::move(*parentsFile));
+        std::vector<std::string> parentPaths = v03::in_parse_dependencies_file(tmp);
+        
+        *parentsFile = archive_entry::make_streaming_file(
+            v03::dependencies_file_name, 0);
+
+        // Save PACxV403 data to file.
+        save(arc, &parentPaths, maxChunkSize, compressType, endianFlag,
+            extCount, exts, filePath, splitLimit, dataAlignment,
+            noCompress);
+
+        *parentsFile = std::move(tmp);
+    }
+
+    // Otherwise...
+    else
+    {
+        save(arc, nullptr, maxChunkSize, compressType, endianFlag,
+            extCount, exts, filePath, splitLimit, dataAlignment,
+            noCompress);
+    }
+}
+} // v05
+
 void fix(void* pac)
 {
     // Attempt to fix header based on version number.
@@ -5214,7 +5311,7 @@ void fix(void* pac)
                 headerV02->fix();
                 return;
             }
-            else if (headerPtr->version.rev == '3')
+            else if (headerPtr->version.rev == '3' || headerPtr->version.rev == '5')
             {
                 v03::header* headerV03 = static_cast<v03::header*>(pac);
                 headerV03->fix();
@@ -5418,7 +5515,7 @@ blob decompress_root(const void* pac)
 
                 return headerV02->decompress_root();
             }
-            else if (headerPtr->version.rev == '3')
+            else if (headerPtr->version.rev == '3' || headerPtr->version.rev == '5')
             {
                 const v03::header* headerV03 = static_cast<
                     const v03::header*>(pac);
@@ -5446,7 +5543,7 @@ void read(void* pac, archive_entry_list* hlArc,
                 v02::read(pac, hlArc, pacs, readSplits);
                 return;
             }
-            else if (headerPtr->version.rev == '3')
+            else if (headerPtr->version.rev == '3' || headerPtr->version.rev == '5')
             {
                 v03::read(pac, hlArc, pacs,
                     readSplits, parentPaths);

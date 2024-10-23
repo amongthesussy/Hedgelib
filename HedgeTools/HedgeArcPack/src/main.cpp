@@ -45,6 +45,7 @@ enum class text_id
     arc_type_ppt2,
     arc_type_origins,
     arc_type_frontiers,
+    arc_type_sxsg,
 
     extracting,
     packing,
@@ -158,6 +159,7 @@ enum class arc_type
     ppt2,
     origins,
     frontiers,
+    sxsg,
 };
 
 struct defaults
@@ -259,6 +261,13 @@ static const defaults arc_type_defaults[] =
         hl::pacx::v4::default_alignment,
         endian_flag::little,
         false
+    },
+
+    {                                           // sxsg
+        hl::pacx::v4::default_split_limit,
+        hl::pacx::v4::default_alignment,
+        endian_flag::little,
+        false
     }
 };
 
@@ -342,6 +351,12 @@ static arc_type get_arc_type(const hl::nchar* typeStr)
         return arc_type::frontiers;
     }
 
+    // Sonic x Shadow Generations .pac files.
+    if (hl::text::iequal(typeStr, HL_NTEXT("sxsg")))
+    {
+        return arc_type::sxsg;
+    }
+
     // Unknown type.
     return arc_type::unknown;
 }
@@ -366,6 +381,7 @@ static const hl::nchar* get_ext(arc_type type)
     case arc_type::ppt2:
     case arc_type::origins:
     case arc_type::frontiers:
+    case arc_type::sxsg:
         return hl::pacx::ext;
 
     default:
@@ -397,6 +413,7 @@ static void print_types(const hl::nchar* fmt, std::FILE* stream)
     hl::nfprintf(stream, fmt, get_text(text_id::arc_type_ppt2));
     hl::nfprintf(stream, fmt, get_text(text_id::arc_type_origins));
     hl::nfprintf(stream, fmt, get_text(text_id::arc_type_frontiers));
+    hl::nfprintf(stream, fmt, get_text(text_id::arc_type_sxsg));
 }
 
 static void print_usage(std::FILE* stream)
@@ -954,6 +971,23 @@ static void pack(const arguments& args)
 
         break;
 
+    case arc_type::sxsg:
+        hl::pacx::v4::v05::save(arc,                        // arc
+            hl::pacx::v4::default_lz4_max_chunk_size,       // maxChunkSize
+            hl::compress_type::lz4,                         // compressType
+            (args.endianness == endian_flag::big) ?         // endianFlag
+                hl::bina::endian_flag::big :
+                hl::bina::endian_flag::little,
+
+            hl::pacx::rangers_ext_count,                    // extCount
+            hl::pacx::rangers_exts,                         // exts
+            args.output,                                    // filePath
+            args.splitLimit,                                // splitLimit
+            args.alignment,                                 // dataAlignment
+            false);                                         // noCompress
+
+        break;
+
     default:
         throw hl::unsupported_exception();
     }
@@ -1011,6 +1045,7 @@ static hl::archive load_arc(const arguments& args)
     case arc_type::sakura:
     case arc_type::ppt2:
     case arc_type::frontiers:
+    case arc_type::sxsg:
         return hl::pacx::v4::load(args.input);
 
     default:

@@ -125,7 +125,10 @@
     HL_NTEXT("origins/hite\t\t(Sonic Origins .pac files)\n"),
 
     /* arc_type_frontiers */
-    HL_NTEXT("frontiers/rangers\t(Sonic Frontiers .pac files)\n\n"),
+    HL_NTEXT("frontiers/rangers\t(Sonic Frontiers .pac files)\n"),
+
+    /* arc_type_sxsg */
+    HL_NTEXT("sxsg\t\t\t(Sonic x Shadow Generations .pac files)\n\n"),
 
     /* extracting */
     HL_NTEXT("Extracting..."),
