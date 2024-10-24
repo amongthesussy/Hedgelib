@@ -105,6 +105,9 @@ HL_API extern const std::size_t hite_ext_count;
 HL_API extern const supported_ext rangers_exts[];
 HL_API extern const std::size_t rangers_ext_count;
 
+HL_API extern const supported_ext miller_exts[];
+HL_API extern const std::size_t miller_ext_count;
+
 namespace v2
 {
 constexpr u32 default_split_limit = 0xA00000U;

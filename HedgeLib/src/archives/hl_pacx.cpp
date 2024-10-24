@@ -142,6 +142,18 @@ const supported_ext rangers_exts[] =
 
 const std::size_t rangers_ext_count = count_of(rangers_exts);
 
+// Auto-generate Sonic X Shadow Generations supported extensions array.
+const supported_ext miller_exts[] =
+{
+#define HL_IN_PACX_MILLER_AUTOGEN(ext, type, kind)\
+    { HL_NTEXT(ext), static_cast<unsigned short>(data_type::type),\
+    supported_ext_kind::kind },
+
+#include "hl_in_pacx_type_autogen.h"
+};
+
+const std::size_t miller_ext_count = count_of(miller_exts);
+
 static const supported_ext& in_get_supported_ext(const nchar* ext,
     const supported_ext* exts, const std::size_t extCount)
 {

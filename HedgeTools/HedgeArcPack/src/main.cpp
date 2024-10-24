@@ -979,8 +979,8 @@ static void pack(const arguments& args)
                 hl::bina::endian_flag::big :
                 hl::bina::endian_flag::little,
 
-            hl::pacx::rangers_ext_count,                    // extCount
-            hl::pacx::rangers_exts,                         // exts
+            hl::pacx::miller_ext_count,                     // extCount
+            hl::pacx::miller_exts,                          // exts
             args.output,                                    // filePath
             args.splitLimit,                                // splitLimit
             args.alignment,                                 // dataAlignment

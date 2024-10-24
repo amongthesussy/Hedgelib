@@ -39,6 +39,10 @@
 #define HL_IN_PACX_RANGERS_AUTOGEN(ext, type, kind)
 #endif
 
+#ifndef HL_IN_PACX_MILLER_AUTOGEN
+#define HL_IN_PACX_MILLER_AUTOGEN(ext, type, kind)
+#endif
+
 /* ======================================== PACx Types ======================================== */
 
 // ResRawData is placed at index 0 for fallback purposes.
@@ -158,6 +162,10 @@ HL_IN_PACX_TYPE_AUTOGEN(ResPointcloudModel)
 HL_IN_PACX_TYPE_AUTOGEN(ResPss)
 HL_IN_PACX_TYPE_AUTOGEN(ResSkinnedMeshCollider)
 HL_IN_PACX_TYPE_AUTOGEN(ResTerrainMaterial)
+
+/* PACx V405+ */
+HL_IN_PACX_TYPE_AUTOGEN(ResIcuData)
+HL_IN_PACX_TYPE_AUTOGEN(ResClipmapOcean)
 
 /*
    ============================================================================================
@@ -646,6 +654,69 @@ HL_IN_PACX_RANGERS_AUTOGEN("pointcloud",        ResPointcloud,              root
 HL_IN_PACX_RANGERS_AUTOGEN("shader-list",       ResShaderList,              root)
 HL_IN_PACX_RANGERS_AUTOGEN("cnvrs-meta",        ResTextMeta,                root)
 
+/*
+   ============================================================================================
+   ==== Sonic X Shadow Generations ("miller")
+   ============================================================================================
+*/
+
+HL_IN_PACX_MILLER_AUTOGEN("mlevel", ResMasterLevel, root)
+HL_IN_PACX_MILLER_AUTOGEN("level", ResLevel, root)
+HL_IN_PACX_MILLER_AUTOGEN("anm.pxd", ResAnimationPxd, root)
+HL_IN_PACX_MILLER_AUTOGEN("skl.pxd", ResSkeletonPxd, root)
+HL_IN_PACX_MILLER_AUTOGEN("dds", ResTexture, split)
+HL_IN_PACX_MILLER_AUTOGEN("asm", ResAnimator, root)
+HL_IN_PACX_MILLER_AUTOGEN("mat-anim", ResAnimMaterial, split)
+HL_IN_PACX_MILLER_AUTOGEN("dvscene", ResDvScene, root)
+HL_IN_PACX_MILLER_AUTOGEN("uv-anim", ResAnimTexSrt, split)
+HL_IN_PACX_MILLER_AUTOGEN("cemt", ResCyanEffect, root)
+HL_IN_PACX_MILLER_AUTOGEN("material", ResMirageMaterial, split)
+HL_IN_PACX_MILLER_AUTOGEN("model", ResModel, split)
+HL_IN_PACX_MILLER_AUTOGEN("cam-anim", ResAnimCameraContainer, split)
+HL_IN_PACX_MILLER_AUTOGEN("vis-anim", ResAnimVis, split)
+HL_IN_PACX_MILLER_AUTOGEN("rfl", ResReflection, root)
+HL_IN_PACX_MILLER_AUTOGEN("cnvrs-text", ResText, root)
+HL_IN_PACX_MILLER_AUTOGEN("btmesh", ResBulletMesh, root)
+HL_IN_PACX_MILLER_AUTOGEN("effdb", ResParticleLocation, root)
+HL_IN_PACX_MILLER_AUTOGEN("gedit", ResObjectWorld, root)
+HL_IN_PACX_MILLER_AUTOGEN("pccol", ResPointcloudCollision, root)
+HL_IN_PACX_MILLER_AUTOGEN("path", ResSplinePath, root)
+HL_IN_PACX_MILLER_AUTOGEN("lf", ResSHLightField, root)
+HL_IN_PACX_MILLER_AUTOGEN("probe", ResProbe, root)
+HL_IN_PACX_MILLER_AUTOGEN("occ", ResOcclusionCapsule, root)
+HL_IN_PACX_MILLER_AUTOGEN("swif", ResSurfRideProject, root)
+HL_IN_PACX_MILLER_AUTOGEN("densitysetting", ResDensitySetting, root)
+HL_IN_PACX_MILLER_AUTOGEN("densitypointcloud", ResDensityPointCloud, root)
+HL_IN_PACX_MILLER_AUTOGEN("lua", ResLuaData, root)
+HL_IN_PACX_MILLER_AUTOGEN("btsmc", ResSkinnedMeshCollider, root)
+HL_IN_PACX_MILLER_AUTOGEN("terrain-model", ResMirageTerrainModel, split)
+HL_IN_PACX_MILLER_AUTOGEN("gismop", ResGismoConfigPlan, root)
+HL_IN_PACX_MILLER_AUTOGEN("fxcol", ResFxColFile, root)
+HL_IN_PACX_MILLER_AUTOGEN("gismod", ResGismoConfigDesign, root)
+HL_IN_PACX_MILLER_AUTOGEN("nmt", ResNavMeshTile, root)
+HL_IN_PACX_MILLER_AUTOGEN("pcmodel", ResPointcloudModel, root)
+HL_IN_PACX_MILLER_AUTOGEN("nmc", ResNavMeshConfig, root)
+HL_IN_PACX_MILLER_AUTOGEN("vat", ResVertexAnimationTexture, root)
+HL_IN_PACX_MILLER_AUTOGEN("heightfield", ResHeightField, root)
+HL_IN_PACX_MILLER_AUTOGEN("light", ResMirageLight, root)
+HL_IN_PACX_MILLER_AUTOGEN("pba", ResPhysicalSkeleton, root)
+HL_IN_PACX_MILLER_AUTOGEN("pcrt", ResPointcloudLight, root)
+HL_IN_PACX_MILLER_AUTOGEN("aism", ResAIStateMachine, root)
+HL_IN_PACX_MILLER_AUTOGEN("cnvrs-proj", ResTextProject, root)
+HL_IN_PACX_MILLER_AUTOGEN("terrain-material", ResTerrainMaterial, root)
+HL_IN_PACX_MILLER_AUTOGEN("pt-anim", ResAnimTexPat, split)
+HL_IN_PACX_MILLER_AUTOGEN("okern", ResOpticalKerning, root)
+HL_IN_PACX_MILLER_AUTOGEN("scfnt", ResScalableFontSet, root)
+HL_IN_PACX_MILLER_AUTOGEN("cso", ResMirageComputeShader, split)
+HL_IN_PACX_MILLER_AUTOGEN("pso", ResMiragePixelShader, split)
+HL_IN_PACX_MILLER_AUTOGEN("vib", ResVibration, root)
+HL_IN_PACX_MILLER_AUTOGEN("vso", ResMirageVertexShader, split)
+HL_IN_PACX_MILLER_AUTOGEN("pointcloud", ResPointcloud, root)
+HL_IN_PACX_MILLER_AUTOGEN("shader-list", ResShaderList, root)
+HL_IN_PACX_MILLER_AUTOGEN("cnvrs-meta", ResTextMeta, root)
+HL_IN_PACX_MILLER_AUTOGEN("icu", ResIcuData, root)
+HL_IN_PACX_MILLER_AUTOGEN("cob", ResClipmapOcean, root)
+
 // Undefine all auto-generator macros.
 #undef HL_IN_PACX_TYPE_AUTOGEN
 #undef HL_IN_PACX_SONIC2013_AUTOGEN
@@ -657,3 +728,4 @@ HL_IN_PACX_RANGERS_AUTOGEN("cnvrs-meta",        ResTextMeta,                root
 #undef HL_IN_PACX_TENPEX_AUTOGEN
 #undef HL_IN_PACX_HITE_AUTOGEN
 #undef HL_IN_PACX_RANGERS_AUTOGEN
+#undef HL_IN_PACX_MILLER_AUTOGEN
