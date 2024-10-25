@@ -32,7 +32,7 @@ enum class supported_ext_kind : unsigned short
         @brief The BINA string and offset tables of this type are to be "merged"
         into the global string and offset tables of the PAC file(s).
     */
-    v2_merged = (root | 4)
+    v2_merged = (root | 4),
 };
 
 struct supported_ext
