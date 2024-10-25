@@ -352,7 +352,8 @@ static arc_type get_arc_type(const hl::nchar* typeStr)
     }
 
     // Sonic x Shadow Generations .pac files.
-    if (hl::text::iequal(typeStr, HL_NTEXT("sxsg")))
+    if (hl::text::iequal(typeStr, HL_NTEXT("sxsg")) ||
+        hl::text::iequal(typeStr, HL_NTEXT("miller")))
     {
         return arc_type::sxsg;
     }
