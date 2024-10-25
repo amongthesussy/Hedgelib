@@ -3326,8 +3326,15 @@ static void in_data_entries_write(
         // Generate placeholder data entry.
         const std::size_t dataEntryPos = stream.tell();
         const bool isHere = (curNode.data->splitIndex == splitIndex);
-        const u64 flags = static_cast<u64>((isHere) ?
-            data_flags::regular_file : data_flags::not_here);
+        const bool hasSplitIndex = (version.rev >= '5');
+        const u16 flags = static_cast<u16>(
+            ((isHere) ? data_flags::regular_file : data_flags::not_here) |
+            ((hasSplitIndex) ? data_flags::has_split_index : data_flags::regular_file)
+        );
+
+        const s16 splitIndex = static_cast<s16>(
+            (hasSplitIndex) ? curNode.data->splitIndex : 0
+        );
 
         data_entry dataEntry =
         {
@@ -3339,7 +3346,8 @@ static void in_data_entries_write(
             nullptr,                                                    // data
             0,                                                          // unknown3
             nullptr,                                                    // ext
-            flags                                                       // flags
+            flags,                                                      // flags
+            splitIndex,                                                 // splitIndex
         };
 
         // Endian-swap data entry if necessary.
@@ -3404,7 +3412,7 @@ static void in_data_entries_write(
 }
 
 static void in_data_entry_fill_in(const in_file_metadata& file,
-    std::size_t dataEntryPos, std::size_t fileDataPos, u64 flags,
+    std::size_t dataEntryPos, std::size_t fileDataPos, u16 flags,
     bina::endian_flag endianFlag, off_table& offTable, stream& stream)
 {
     // Jump to data offset position.
@@ -3431,7 +3439,7 @@ static void in_data_entry_fill_in(const in_file_metadata& file,
 }
 
 static void in_file_data_write(const in_radix_node<const in_file_metadata>& fileNode,
-    std::size_t& dataEntryPos, unsigned short splitIndex,
+    std::size_t& dataEntryPos, unsigned short splitIndex, bina::ver version,
     bina::endian_flag endianFlag, u32 dataAlignment,
     packed_file_info* pfi, off_table& offTable, stream& stream)
 {
@@ -3469,6 +3477,11 @@ static void in_file_data_write(const in_radix_node<const in_file_metadata>& file
                 flags |= data_flags::bina_file;
             }
 
+            if (version.rev >= '5')
+            {
+                flags |= data_flags::has_split_index;
+            }
+
             // Write data, then free it as necessary.
             const std::size_t fileDataPos = stream.tell();
             stream.write_all(file.entry->size(), data);
@@ -3483,7 +3496,7 @@ static void in_file_data_write(const in_radix_node<const in_file_metadata>& file
 
             // Fill-in data entry.
             in_data_entry_fill_in(file, dataEntryPos, fileDataPos,
-                static_cast<u64>(flags), endianFlag, offTable, stream);
+                static_cast<u16>(flags), endianFlag, offTable, stream);
         }
 
         // Increase current offset position to account for data entry.
@@ -3494,45 +3507,45 @@ static void in_file_data_write(const in_radix_node<const in_file_metadata>& file
     for (const auto& child : fileNode.children)
     {
         in_file_data_write(*child.get(), dataEntryPos, splitIndex,
-            endianFlag, dataAlignment, pfi, offTable, stream);
+            version, endianFlag, dataAlignment, pfi, offTable, stream);
     }
 }
 
 static void in_file_data_write(const in_radix_tree<const in_file_metadata>& fileTree,
-    std::size_t& dataEntryPos, unsigned short splitIndex,
+    std::size_t& dataEntryPos, unsigned short splitIndex, bina::ver version,
     bina::endian_flag endianFlag, u32 dataAlignment,
     packed_file_info* pfi, off_table& offTable, stream& stream)
 {
     in_file_data_write(fileTree.rootNode, dataEntryPos, splitIndex,
-        endianFlag, dataAlignment, pfi, offTable, stream);
+        version, endianFlag, dataAlignment, pfi, offTable, stream);
 }
 
 static void in_file_data_write(const in_radix_node<in_type_tree_metadata>& typeNode,
-    std::size_t& dataEntryPos, unsigned short splitIndex,
+    std::size_t& dataEntryPos, unsigned short splitIndex, bina::ver version,
     bina::endian_flag endianFlag, u32 dataAlignment,
     packed_file_info* pfi, off_table& offTable, stream& stream)
 {
     if (typeNode.data)
     {
         in_file_data_write(typeNode.data->fileTree, dataEntryPos, splitIndex,
-            endianFlag, dataAlignment, pfi, offTable, stream);
+            version, endianFlag, dataAlignment, pfi, offTable, stream);
     }
 
     // Recurse through child nodes.
     for (const auto& child : typeNode.children)
     {
         in_file_data_write(*child.get(), dataEntryPos, splitIndex,
-            endianFlag, dataAlignment, pfi, offTable, stream);
+            version, endianFlag, dataAlignment, pfi, offTable, stream);
     }
 }
 
 static void in_file_data_write(const in_radix_tree<in_type_tree_metadata>& typeTree,
-    std::size_t& dataEntryPos, unsigned short splitIndex,
+    std::size_t& dataEntryPos, unsigned short splitIndex, bina::ver version,
     bina::endian_flag endianFlag, u32 dataAlignment,
     packed_file_info* pfi, off_table& offTable, stream& stream)
 {
     in_file_data_write(typeTree.rootNode, dataEntryPos, splitIndex,
-        endianFlag, dataAlignment, pfi, offTable, stream);
+        version, endianFlag, dataAlignment, pfi, offTable, stream);
 }
 
 template<typename dep_list_t>
@@ -3635,7 +3648,7 @@ std::size_t in_write(const bina::ver version, unsigned short splitIndex,
     const std::size_t fileDataPos = stream.tell();
     curOffPos = dataEntriesPos;
 
-    in_file_data_write(typeTree, curOffPos, splitIndex,
+    in_file_data_write(typeTree, curOffPos, splitIndex, version,
         endianFlag, dataAlignment, pfi, offTable, stream);
 
     // Finish writing PACx data.
@@ -5018,7 +5031,7 @@ void in_write(hl::bina::ver version, const archive_entry_list& arc,
     mem_stream rootInternalFile;
     in_dep_metadata rootDepInfo;
 
-    const std::size_t rootDepTablePos = v3::in_write(ver_402,
+    const std::size_t rootDepTablePos = v3::in_write((version.rev >= '5') ? version : ver_402,
         USHRT_MAX, uid, typeMetadata, splitLimit, dataAlignment,
         true, compressType, maxChunkSize, endianFlag, deps,
         nullptr, rootInternalFile);

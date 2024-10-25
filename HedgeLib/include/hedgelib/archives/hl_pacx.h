@@ -636,11 +636,12 @@ HL_STATIC_ASSERT_SIZE(dep_info, 8);
 using dep_table = arr64<dep_info>;
 HL_STATIC_ASSERT_SIZE(dep_table, 16);
 
-enum class data_flags : u64
+enum class data_flags : u16
 {
     regular_file = 0,
     not_here = 1,
-    bina_file = 2
+    bina_file = 2,
+    has_split_index = 4,
 };
 
 HL_ENUM_CLASS_DEF_BITWISE_OPS(data_flags)
@@ -659,11 +660,11 @@ struct data_entry
     /** @brief Always 0? unknown2 from v2::data_entry?? */
     u64 unknown3;
     off64<char> ext;
-    /**
-        @brief See hl::pacx::v3::data_flags.
-        Probably actually just a single byte with 7 bytes of padding??
-    */
-    u64 flags;
+    /** @brief See hl::pacx::v3::data_flags. */
+    u16 flags;
+    /** @brief Only used in V405 and later. */
+    s16 splitIndex;
+    u32 padding1;
 
     template<bool swapOffsets = true>
     void endian_swap() noexcept
@@ -675,16 +676,22 @@ struct data_entry
         hl::endian_swap(unknown3);
         hl::endian_swap<swapOffsets>(ext);
         hl::endian_swap(flags);
+        hl::endian_swap(splitIndex);
     }
 
     inline bool is_proxy_entry() const noexcept
     {
-        return ((flags & static_cast<u64>(data_flags::not_here)) != 0);
+        return ((flags & static_cast<u16>(data_flags::not_here)) != 0);
     }
 
     inline bool is_bina_file() const noexcept
     {
-        return ((flags & static_cast<u64>(data_flags::bina_file)) != 0);
+        return ((flags & static_cast<u16>(data_flags::bina_file)) != 0);
+    }
+
+    inline bool has_split_index() const noexcept
+    {
+        return ((flags & static_cast<u16>(data_flags::has_split_index)) != 0);
     }
 };
 
